@@ -1,0 +1,22 @@
+@tailwind components;
+@tailwind utilities;
+
+.my-quill-editor .quill {
+  @apply min-h-56 rounded-md border-none bg-background p-2 text-foreground;
+}
+
+.quill .ql-toolbar.ql-snow {
+  @apply rounded-t-sm border-input p-3;
+}
+
+.quill .ql-container.ql-snow {
+  @apply min-h-[inherit] rounded-b-sm border-input;
+}
+
+.my-quill-editor .ql-editor {
+  @apply p-4 leading-relaxed text-foreground;
+}
+
+.my-quill-editor .ql-editor.ql-blank::before {
+  @apply text-muted-foreground;
+}

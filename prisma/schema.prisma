@@ -1,0 +1,492 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN //acesso a tudo
+  ADMIN //acesso a tudo menos dados financeiros
+  HAKUNA //Rota hakuna, página do evento, entrega de boné, fazer inscricao
+  CHECKIN //rotas: checkin lgnd e participantes, página do evento, entrega de boné, inscricao
+  LADIES //rota ladies, página do evento, entrega de boné, inscricao
+  BILLING //acesso aos dados financeiros
+  MEMBER //??
+  USER //página do evento e fazer inscrição
+}
+
+enum FLAGS {
+  sendConfirmationMessageByWhats
+  sendConfirmationMessageByEmail
+}
+
+enum MANADADAY_PARTICIPANT_TYPE {
+  ADULT
+  PAID_CHILD
+  FREE_CHILD
+}
+
+// Necessary for Next auth
+model Account {
+  id                       String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId                   String  @db.ObjectId
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token_expires_in Int?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  cpf           String?
+  accounts      Account[]
+  sessions      Session[]
+  role          String?   @default("USER") // Possible Values: SUPER_ADMIN | ADMIN | USER
+
+  invites            Invite[]
+  member_on          Member[]
+  owns_organizations Organization[]
+  owns_events        Evento[]
+}
+
+model Evento {
+  id                            String              @id @default(auto()) @map("_id") @db.ObjectId
+  type                          String // EventTypeEnumSchema = LEGENDARIOS | REM | LEGADO_FILHA | LEGADO_FILHA
+  pista                         String
+  titulo                        String
+  description                   String
+  subtitulo                     String
+  periodo                       String
+  dataInicio                    DateTime
+  dataFim                       DateTime
+  local                         String
+  localSaida                    String
+  localUrl                      String
+  topNumero                     Int
+  valorParticipante             Float
+  valorParaObterCertificacao    Float
+  valorParaLgndCertificados     Float
+  linkWhatsappGrupoParticipante String
+  linkWhatsappGrupoServir       String
+  vagasParticipar               Int
+  vagasServir                   Int
+  terms                         String?
+  list                          String?
+  banner                        String
+  posted                        Boolean
+  openServir                    Boolean
+  openParticipar                Boolean
+  hero                          Int
+  credit_card_fees              Json?
+  itopFee                       Int?
+  Inscricao                     Inscricao[]
+  LinkSecreto                   LinkSecreto[]
+  CupomUse                      CupomUse[]
+  CupomUseManada                CupomUseManada[]
+  CupomDesconto                 CupomDesconto[]
+  ManadaDayRegister             ManadaDayRegister[]
+
+  slug String? @unique @default(uuid())
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String?       @map("organization_id") @db.ObjectId
+
+  owner   User?     @relation(fields: [ownerId], references: [id])
+  ownerId String?   @map("owner_id") @db.ObjectId
+  Vehicle Vehicle[]
+}
+
+model Inscricao {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  eventoId String @map("eventoId") @db.ObjectId
+  evento   Evento @relation(fields: [eventoId], references: [id])
+
+  // Dados Pessoais
+  cpf            String?   @map("cpf")
+  nome           String?   @map("nome")
+  rg             String?   @map("rg")
+  orgaoExpedidor String?   @map("orgao_expedidor")
+  dataNascimento DateTime? @map("data_nascimento")
+  estadoCivil    String?   @map("estado_civil")
+  celular        String?   @map("celular")
+  email          String?   @map("email")
+
+  // Endereço
+  cep            String? @map("cep")
+  rua            String? @map("rua")
+  ruaNumero      String? @map("rua_numero")
+  ruaComplemento String? @map("rua_complemento")
+  bairro         String? @map("bairro")
+  cidade         String? @map("cidade")
+  estado         String? @map("estado")
+  pais           String? @map("pais")
+
+  nomeContatoCartas    String? @map("nome_contato_cartas")
+  celularContatoCartas String? @map("celular_contato_cartas")
+
+  // Saúde
+  peso                               Float?   @map("peso")
+  altura                             Float?   @map("altura")
+  imc                                Float?   @map("imc")
+  biotipo                            String?
+  possuiPlanoSaude                   Boolean? @map("possui_plano_saude")
+  nomePlanoSaude                     String?  @map("nome_plano_saude")
+  tipoSanguineo                      String?  @map("tipo_sanguineo")
+  possuiAlergia                      Boolean? @map("possui_alergia")
+  possuiDiabetes                     Boolean? @map("possui_diabetes")
+  possuiConvulsoes                   Boolean? @map("possui_convulsoes")
+  possuiDesmaios                     Boolean? @map("possui_desmaios")
+  possuiProblemasCardiacos           Boolean? @map("possui_problemas_cardiacos")
+  possuiDisturbiosAlimentares        Boolean? @map("possui_disturbios_alimentares")
+  possuiProblemasRespiratorios       Boolean? @map("possui_problemas_respiratorios")
+  cuidadosPsiquiatricos              Boolean? @map("cuidados_psiquiatricos")
+  medicacaoDepressao                 Boolean? @map("medicacao_depressao")
+  possuiProblemasMusculoesqueleticos Boolean? @map("possui_problemas_musculoesqueleticos")
+  doencaOuCondicao                   String?  @map("doenca_ou_condicao")
+  medicacoes                         String?  @map("medicacoes")
+  outrasInformacoesMedicas           String?  @map("outras_informacoes_medicas")
+  motivosDietaEspecial               String?  @map("motivos_dieta_especial")
+
+  // Pagamento DADOS RELATIVOS A PAGAMENTO PRECISAM SER COM TYPE INT
+  pagamento_status                String?   @map("pagamento_status") // PAGAMENTO_CARTAO_PENDENTE | PAGAMENTO_CARTAO_CONCLUIDO | CHARGE_COMPLETED  | CHARGE_EXPIRED  | GRATUITO
+  pagamento_data                  DateTime? @map("pagamento_data")
+  pagamento_topValue              String?   @map("pagamento_topValue")
+  pagamento_couponValue           String?   @map("pagamento_couponValue")
+  pagamento_valueDiscount         String?   @map("pagamento_valueDiscount")
+  pagamento_link_url              String?
+  pagamento_feeCard               String?   @map("pagamento_feeCard")
+  pagamento_top_value             Int?      @default(0)
+  pagamento_fee_card              Int?      @default(0)
+  pagamento_discount_value        Int?      @default(0)
+  pagamento_installment           Int?      @default(0)
+  pagamento_value_per_installment Int?      @default(0)
+  pagamento_total_value           Int?      @default(0)
+  pagamento_integracao_status     String?   @map("pagamento_integracao_status") // STATUS ERROR FROM PAYMENT SERVICE
+  metodo_pagamento                String?   @map("metodo_pagamento") // PIX | CARTAO | CUPOM_GRATUITO
+  pagamento_integracao_service    String?   @map("pagamento_integracao_service") // WOOVI | ASAAS
+  pagamento_charge_id             String?
+  pagamento                       Json[]    @map("pagamento")
+  cobrancaWoovi                   Json[]    @map("cobranca_woovi")
+  reembolso_status                String?
+  reembolso_value                 Int?
+  reembolso_description           String?
+  reembolso_type                  String?
+  reembolso_receipt               String?
+  reembolso_created               DateTime?
+  obs                             String?   @map("obs")
+
+  // Status
+  ativo     Boolean? @default(true) @map("ativo")
+  status    String?  @default("INSCREVENDO") @map("status") // INSCREVENDO | CONFIRMADA | AGUARDANDO_PAGAMENTO | CANCELADA_PELO_CLIENTE
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  flags     FLAGS[]
+
+  // Religião
+  igreja       String? @map("igreja")
+  igrejaPastor String? @map("igreja_pastor")
+
+  // Família
+  temFilhos Boolean? @map("tem_filhos")
+  qtdFilhos Int?     @map("qtd_filhos")
+
+  // Contato de Emergência
+  nomeContatoEmergencia        String? @map("nome_contato_emergencia")
+  emailContatoEmergencia       String? @map("email_contato_emergencia")
+  celularContatoEmergencia     String? @map("celular_contato_emergencia")
+  tipoVinculoContatoEmergencia String? @map("tipo_vinculo_contato_emergencia")
+
+  // Outros
+  caravana     String? @map("caravana")
+  tamanhoFarda String? @map("tamanho_farda")
+
+  aceitaTermos  Boolean? @map("aceita_termos")
+  tipoInscricao String?  @map("tipo_inscricao") // PARTICIPANTE ou SERVIR
+
+  // Legendários
+  comoConheceuLegendarios String?  @map("como_conheceu_legendarios")
+  quemConvidou            String?  @map("quem_convidou")
+  top                     String?  @map("top")
+  nrLgnd                  String?  @map("nr_lgnd")
+  lgndCertificado         Boolean? @map("lgnd_certificado")
+  lgndManadaDourados      Boolean? @map("lgnd_manada_dourados")
+  possuiAutorizacaoServir Boolean? @map("possui_autorizacao_servir")
+  linkSecreto             String?  @map("link_secreto")
+
+  // Rem
+  nrRem                   String?   @map("nr_rem")
+  spouseName              String?   @map("spouse_name")
+  spousePhoneNumber       String?   @map("spouse_phone_number")
+  spouseEmail             String?   @map("spouse_email")
+  spouseCPF               String?   @map("spouse_cpf")
+  spouseBirthDate         DateTime? @map("spouse_birth_date")
+  womanTshirtSize         String?   @map("woman_tshirt_size")
+  manTshirtSize           String?   @map("man_tshirt_size")
+  hasHealthIssues         Boolean?  @map("has_health_issues")
+  healthIssuesDescription String?   @map("health_issues_description")
+  isPregnant              Boolean?  @map("is_pregnant")
+
+  // Check-in
+  checkin       Boolean? @map("checkin")
+  check_obs     String?  @map("check_obs")
+  checkinCode   String?  @map("checkin_code")
+  checkinStatus String?  @map("checkin_status") // WAITING_FOR_DOCUMENTS | DOCUMENTS_SENT | INVALID_DOCUMENTS | VALID_DOCUMENTS
+  documentId    String?  @map("document_id")
+  saude         Int?     @map("saude")
+  saude_obs     String?  @map("saude_obs")
+  familia       Int?     @map("familia")
+  lgnd_funcao   String?  @map("lgnd_funcao")
+
+  // Cartas
+  cartas_contato_valido Boolean?
+  cartas_recebida       Boolean?
+  cartas_obs            String?
+
+  vehicleId String?  @map("vehicle_id") @db.ObjectId
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  // Relacionamentos com outras tabelas
+  CupomUse CupomUse[]
+  LinkUse  LinkUse[]
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model CupomDesconto {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  codigo         String
+  desconto       Int
+  quantidade     Int
+  ativo          Boolean
+  usadoCount     Int              @default(0)
+  eventoId       String?          @map("eventoId") @db.ObjectId
+  evento         Evento?          @relation(fields: [eventoId], references: [id])
+  usos           CupomUse[]
+  CupomUseManada CupomUseManada[]
+}
+
+model CupomUse {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  cupomId        String        @map("cupomId") @db.ObjectId
+  cupom          CupomDesconto @relation(fields: [cupomId], references: [id])
+  inscricaoId    String        @db.ObjectId
+  inscricao      Inscricao     @relation(fields: [inscricaoId], references: [id])
+  dataUtilizacao DateTime
+  evento         Evento        @relation(fields: [eventoId], references: [id])
+  eventoId       String        @db.ObjectId
+}
+
+model CupomUseManada {
+  id                  String            @id @default(auto()) @map("_id") @db.ObjectId
+  cupomId             String            @map("cupomId") @db.ObjectId
+  cupom               CupomDesconto     @relation(fields: [cupomId], references: [id])
+  manadaDayRegisterId String            @db.ObjectId
+  manadaDayRegister   ManadaDayRegister @relation(fields: [manadaDayRegisterId], references: [id])
+  dataUtilizacao      DateTime
+  evento              Evento            @relation(fields: [eventoId], references: [id])
+  eventoId            String            @db.ObjectId
+}
+
+model LinkSecreto {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  link          String
+  quantidade    Int
+  usadoCount    Int       @default(0)
+  evento        Evento?   @relation(fields: [eventoId], references: [id])
+  eventoId      String?   @db.ObjectId
+  ativo         Boolean
+  tipoInscricao String
+  usos          LinkUse[]
+}
+
+model LinkUse {
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  linkId         String      @map("linkId") @db.ObjectId
+  link           LinkSecreto @relation(fields: [linkId], references: [id])
+  inscricaoId    String      @db.ObjectId
+  inscricao      Inscricao   @relation(fields: [inscricaoId], references: [id])
+  dataUtilizacao DateTime
+}
+
+model Vehicle {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  identifier    String
+  type          String
+  active        Boolean     @default(true)
+  usedCapacity  Int?        @default(0) @map("used_capacity")
+  totalCapacity Int?        @default(0) @map("total_capacity")
+  plate         String?
+  owner         String?
+  function      String?
+  notes         String?
+  eventId       String?     @map("event_id") @db.ObjectId
+  event         Evento?     @relation(fields: [eventId], references: [id])
+  registration  Inscricao[]
+}
+
+model woovipayloads {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  charge        Json?    @map("charge")
+  company       Json?    @map("company")
+  correlationId String?  @map("correlationID")
+  createdAt     DateTime @default(now()) @map("createdAt")
+  endToEndId    String?  @map("endToEndId")
+  event         String?  @map("event")
+  payload       Json?    @map("payload")
+  pix           Json?    @map("pix")
+}
+
+model asaaspayloads {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  payloadId   String?  @map("payloadId")
+  event       String?  @map("event")
+  createdAt   DateTime @default(now()) @map("createdAt")
+  payment     Json?    @map("payment")
+  inscricaoId String?  @map("inscricaoId")
+  eventoId    String?  @map("eventoId")
+}
+
+model Invite {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  role      Role
+  createdAt DateTime @default(now()) @map("created_at")
+
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String? @map("author_id") @db.ObjectId
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id") @db.ObjectId
+
+  @@unique([email, organizationId])
+  @@index([email])
+  @@map("invites")
+}
+
+model Member {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  role Role   @default(MEMBER)
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @map("organization_id") @db.ObjectId
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id") @db.ObjectId
+
+  @@unique([organizationId, userId])
+  @@map("members")
+}
+
+model Organization {
+  id                        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                      String
+  cnpj                      String
+  pixKey                    String   @map("pix_key")
+  managerName               String   @map("manager_name")
+  managerPhone              String   @map("manager_phone")
+  supportContact            String?  @map("support_contact")
+  socialMediaInstagram      String?  @map("social_media_instagram")
+  socialMediaWhatsapp       String?  @map("social_media_whatsapp")
+  socialMediaYoutube        String?  @map("social_media_youtube")
+  slug                      String?  @unique
+  domain                    String?  @unique
+  shouldAttachUsersByDomain Boolean  @default(false) @map("should_attach_users_by_domain")
+  avatarUrl                 String?  @map("avatar_url")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  owner   User   @relation(fields: [ownerId], references: [id])
+  ownerId String @map("owner_id") @db.ObjectId
+
+  invites Invite[]
+  members Member[]
+  events  Evento[]
+
+  @@map("organizations")
+}
+
+model ManadaDayRegister {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  eventoId String @map("eventoId") @db.ObjectId
+  evento   Evento @relation(fields: [eventoId], references: [id])
+
+  name            String
+  email           String
+  phone           String
+  cpf             String
+  isLegendary     Boolean @map("is_legendary")
+  legendaryNumber String? @map("legendary_number")
+
+  status    String
+  createdAt DateTime @default(now()) @map("created_at")
+  updateAt  DateTime @updatedAt @map("update_at")
+
+  paymentStatus              String?   @map("payment_status") // PAGAMENTO_CARTAO_PENDENTE | PAGAMENTO_CARTAO_CONCLUIDO | CHARGE_COMPLETED | CHARGE_EXPIRED | GRATUITO
+  paymentData                DateTime? @map("payment_data")
+  paymentLinkUrl             String?   @map("payment_link_url")
+  paymentFeeCard             Int?      @default(0) @map("payment_fee_card")
+  paymentDiscount            Int?      @default(0) @map("payment_discount")
+  paymentInstallment         Int?      @default(0) @map("payment_installment")
+  paymentValuePerInstallment Int?      @default(0) @map("payment_value_per_installment")
+  paymentTotalValue          Int?      @default(0) @map("payment_total_value")
+  paymentCouponUsed          String?   @map("payment_coupon_used")
+  paymentIntegrationStatus   String?   @map("payment_integration_status") // STATUS ERROR FROM PAYMENT SERVICE
+  paymentMethod              String?   @map("payment_method") // PIX | CARTAO | CUPOM_GRATUITO
+  paymentIntegrationService  String?   @map("payment_integration_service") // WOOVI | ASAAS
+  paymentChargeId            String?   @map("payment_charge_id")
+
+  identifier String?
+
+  participants   Participant[]
+  CupomUseManada CupomUseManada[]
+}
+
+model Participant {
+  id                  String            @id @default(auto()) @map("_id") @db.ObjectId
+  manadaDayRegisterId String            @map("manada_day_id") @db.ObjectId
+  manadaDayRegister   ManadaDayRegister @relation(fields: [manadaDayRegisterId], references: [id])
+
+  name  String
+  cpf   String?
+  type  MANADADAY_PARTICIPANT_TYPE
+  value Int                        @default(0)
+
+  checkin     Boolean?
+  checkinCode String?  @map("checkin_code")
+}
