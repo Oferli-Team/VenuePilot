@@ -112,7 +112,7 @@
     "libphonenumber-js": "^1.12.6",
     "lucide-react": "^0.396.0",
     "motion": "^12.10.4",
-    "nanoid": "^5.0.7",
+    "nanoid": "^5.1.16",
     "next": "^14.2.1",
     "next-auth": "^4.24.7",
     "next-themes": "^0.3.0",
