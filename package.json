@@ -113,7 +113,7 @@
     "lucide-react": "^0.396.0",
     "motion": "^12.10.4",
     "nanoid": "^5.0.7",
-    "next": "^14.2.1",
+    "next": "^15.5.24",
     "next-auth": "^4.24.7",
     "next-themes": "^0.3.0",
     "nextjs-toploader": "^3.6.15",
