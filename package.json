@@ -88,7 +88,7 @@
     "@vercel/blob": "^1.0.2",
     "@vercel/speed-insights": "^1.0.12",
     "@yudiel/react-qr-scanner": "^2.2.1",
-    "axios": "^1.9.0",
+    "axios": "^1.20.0",
     "card-validator": "^10.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
